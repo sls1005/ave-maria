@@ -36,8 +36,6 @@ Available subcommands & options:
 
       --no-linebreaks                             Do not randomly add linebreaks.
 
-      --input-data <data>                         Supply the input data directly. This overrides the input file. This isn't required if you supply the input file ("[file]").
-
       -o, --output <file>                         Specify the output file.
 
 The argument [file] should be the name or path to the file that will be used as the input (the file containing the plaintext / encoded text, but not the code list, which is supplied using -c). Note that the input file doesn't need to be a text file. If the input file isn't given, this will read from stdin.
@@ -52,7 +50,7 @@ CodeValidationResult = namedtuple('CodeValidationResult', "error_code, double_ch
 EncoderConfiguration = namedtuple('EncoderConfiguration', "wordsep, block_size, capitalize, use_punctuation, add_linebreaks") # str, int, bool, bool, bool
 DecoderConfiguration = namedtuple('DecoderConfiguration', "wordsep, case_sensitive") # str, bool
 
-MODE_ENCODE = 1 # used as mode code
+MODE_ENCODE = 1
 MODE_DECODE = 2
 MODE_EXTRACT = 3
 
@@ -234,7 +232,6 @@ def main():
     raw_text_file_name = None
     code_list_file_encoding = None
     input_file_encoding = None
-    input_data = None
     output_file_encoding = None
     encoder_block_size = 500
     should_extract_codes = False
@@ -310,15 +307,6 @@ def main():
             no_capitalize = True
         elif a == '--no-linebreaks':
             should_not_add_linebreaks = True
-        elif a == '--input-data':
-            if input_file_name is not None:
-                stderr.write("[Error] You cannot supply both the input file and '--input-data' at the same time.\n")
-                exit()
-            i += 1
-            if i == argc:
-                stderr.write("[Error] <data> is expected after %s but is not given.\n" % a)
-                exit()
-            input_data = argv[i]
         elif a in ('-o', '--output'):
             i += 1
             if i == argc:
@@ -326,11 +314,7 @@ def main():
                 exit()
             output_file_name = argv[i]
         else:
-            if input_data is not None:
-                stderr.write("[Error] You cannot supply both the input file and '--input-data' at the same time.\n")
-                exit()
-            else:
-                input_file_name = a
+            input_file_name = a
         i += 1
     if should_extract_codes:
         if code_list_file_name is not None:
