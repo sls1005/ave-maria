@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Python 3+ is required.
-# Version: 0.1.0-1
+# Version: 0.3.0-1
 from sys import argv, stdin, stdout, stderr
 from os import linesep
 from secrets import randbelow
