@@ -29,7 +29,7 @@ You can write your own code list, or use one from the `code_lists` directory:
 
 * [`code_lists/codes-en.txt`](code_lists/codes-en.txt) includes words used in modern daily life, conversations and messages.
 
-The code list file should be a text file containing words or phrases separated by line separators. The encoding can be configured, and whether there is a byte-order mark or not, when the encoding is UTF-8, is not important. (A compatible implementation must handle this correctly and must not require the byte-order mark to be or not be present when the encoding is UTF-8.)
+The code list file should be a text file containing words or phrases separated by line separators. The encoding can be configured using CLI options, and whether there is a byte-order mark or not, when the encoding is UTF-8, is not important. (A compatible implementation must handle this correctly and must not require the byte-order mark to be or not be present when the encoding is UTF-8.)
 
 The number of codes in a code list is unlimited, as long as it is equal to or greater than 256. One code must not be identical to another in the code list, and must not be a pure combination of any number of other codes from the same list, or it would be impossible to decode.
 
