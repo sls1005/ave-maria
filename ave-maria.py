@@ -178,7 +178,7 @@ def validateCodes(code_list, wordsep = ' ', check_length=True, case_sensitive = 
                         error_code |= 2
                         stderr.write("[Error] It seems that code number {0} ('{1}') and {2} ('{3}') are identical!\n\n".format(code_idx1 + 1, code_list[code_idx1], code_idx2 + 1, code_list[code_idx2]))
                         reported |= {code_idx1, code_idx2}
-                    else:
+                    elif code_idx1 not in result_set:
                         start_idx = code2.find(code1)
                         if (start_idx != -1) and (start_idx + len(code1) < len(code2)):
                             result_set.add(code_idx1)
