@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Python 3+ is required.
-# Version: 0.3.0-1
+# Version: 0.4.0-1
 from sys import argv, stdin, stdout, stderr
 from os import linesep
 from secrets import randbelow
@@ -120,7 +120,8 @@ def decode(code_list, double_check_set=set(), input_file=stdin, output_file=stdo
     ac = AhoCorasick(map(str.lower, code_list), matchkind=MatchKind.LeftmostLongest)
     wordsep = config.wordsep
     n_codes = len(code_list)
-    buf_size = max(len(wordsep), max(map(len, code_list))) * n_codes
+    max_len = max(len(wordsep), max(map(len, code_list)))
+    buf_size = max_len * n_codes
     offset = 0
     buf_temp = input_file.read(buf_size)
     buf = buf_temp if config.case_sensitive else buf_temp.lower()
@@ -128,7 +129,7 @@ def decode(code_list, double_check_set=set(), input_file=stdin, output_file=stdo
     while True:
         edge = 0
         for t in ac.find_matches_as_indexes(buf, overlapping=False):
-            if (t[0] in double_check_set) and (t[2] > len(buf) - len(wordsep) - 1) and (not flag_final):
+            if (t[0] in double_check_set) and (t[2] > len(buf) - max_len) and (not flag_final):
                 break
             else:
                 k = (t[0] - offset) % n_codes
