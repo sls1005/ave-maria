@@ -29,12 +29,14 @@ You can write your own code list, or use one from the `code_lists` directory:
 
 * [`code_lists/codes-en.txt`](code_lists/codes-en.txt) includes words used in modern daily life, conversations and messages.
 
+* [`code_lists/codes-lorem.txt`](code_lists/codes-lorem.txt) contains Latin and pseudo-Latin words derived from *Lorem ipsum*.
+
 The code list file should be a text file containing words or phrases separated by line separators. The encoding can be configured using CLI options, and whether there is a byte-order mark or not, when the encoding is UTF-8, is not important. (A compatible implementation must handle this correctly and must not require the byte-order mark to be or not be present when the encoding is UTF-8.)
 
 The number of codes in a code list is unlimited, as long as it is equal to or greater than 256. One code must not be identical to another in the code list, and must not be a pure combination of any number of other codes from the same list, or it would be impossible to decode.
 
 ### Warning
 
-Please note that steganography is different from encryption, and substitution ciphers aren't secure by modern standards (which is why this documentation used ‘encode’/‘decode’ instead of ‘encrypt’/‘decrypt’). Even if you change the code list, it is still not secure as a cipher. The goal of steganography isn't to make your message undecipherable but to make people not to know to decipher it (or intercept your letters, etc.).
+Please note that steganography is different from encryption, and substitution ciphers aren't secure by modern standards (which is why this documentation used ‘encode’/‘decode’ instead of ‘encrypt’/‘decrypt’). () Even if you change the code list, it is still not secure as a cipher. The goal of steganography isn't to make your message undecipherable but to make people not to know to decipher it (or intercept your letters, etc.).
 
 To use this more securely, you should first encrypt your message with a modern cryptographic algorithm utilizing a symmetric/asymmetric key before applying steganography, and it would be even better if you could compress the message or data and salt it before applying encryption and steganography.
