@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Python 3+ is required.
-# Version: 0.4.0-1
+# Version: 0.5.0-1
 from sys import argv, stdin, stdout, stderr
 from os import linesep
 from secrets import randbelow
@@ -28,6 +28,14 @@ Available subcommands & options:
 
       -oenc, --output-encoding <encoding>         Specify the encoding of the output file. Not applicable for the decoder mode. (Default: the same as -cenc or -ienc if given, or UTF-8 without BOM if not given)
 
+      -8bits, --8-bits                            Encode every 8 bits. The number of codes in the code list must be greater than or equal to 256.
+
+      -4bits, --4-bits                            Encode every 4 bits. The number of codes in the code list must be greater than or equal to 16.
+
+      -2bits, --2-bits                            Encode every 2 bits. The number of codes in the code list must be greater than or equal to 4.
+
+      -1bit, --1-bit                              Encode every 1 bit. The number of codes in the code list must be greater than or equal to 2.
+
       --encoder-block-size <size>                 Specify the block size used of an encoder. <size> must be an integral number.
 
       --no-punc, --no-punctuation                 Do not add random punctuation.
@@ -42,8 +50,6 @@ The argument [file] should be the name or path to the file that will be used as 
 
 Example: ./ave-maria.py encode -c code_lists/codes-en.txt -o encoded.txt input.txt
 '''
-# The following options are not implemented:
-#   -l, --locale <locale>     The language or locale code. (Not implemented yet)
 
 # Class
 CodeValidationResult = namedtuple('CodeValidationResult', "error_code, double_check_set") # int, set[int]
@@ -59,10 +65,25 @@ def read_as_bytes(file, n = None):
     return tmp.encode(file.encoding) if not('b' in file.mode) else tmp
 
 def load_code_list(file_path, encoding = 'UTF-8-sig'):
-    with open(file_path, 'r', encoding=encoding) as f:
-        return f.read().splitlines()
+    with open(file_path, 'r', encoding=encoding) as file:
+        return list(filter(lambda s: s != '', map(lambda s: s.rstrip('\r\n'), file)))
 
-def encode(code_list, input_file=stdin, output_file=stdout, config = EncoderConfiguration(wordsep = ' ', block_size=500, use_punctuation = True, capitalize = True, add_linebreaks = True)): # '))' is correct
+def divide_bytes_into_bits(a, nbits): # bytes -> int, iterator
+    n = 1 << nbits
+    bit_count = 0
+    for b in a:
+        k = b
+        while True:
+            yield k % n
+            k >>= nbits
+            bit_count += nbits
+            if bit_count >= 8:
+                bit_count %= 8
+                break
+
+def encode(code_list, input_file=stdin, output_file=stdout, nbits = 8, config = EncoderConfiguration(wordsep = ' ', block_size=500, use_punctuation = True, capitalize = True, add_linebreaks = True)):
+    if nbits not in (1, 2, 4, 8):
+        raise ValueError("Encoding by {0} bits is not supported.".format(nbits))
     wordsep = config.wordsep
     block_size = config.block_size
     n_codes = len(code_list)
@@ -74,58 +95,63 @@ def encode(code_list, input_file=stdin, output_file=stdout, config = EncoderConf
     buf_len = len(buf)
     need_final_dot = (buf_len > 0)
     while buf_len > 0:
-        for i in range(buf_len):
+        for x in divide_bytes_into_bits(buf, nbits):
             if should_add_wordsep:
                 output_file.write(wordsep)
             else:
                 should_add_wordsep = True
-            code = code_list[(buf[i] + offset) % n_codes]
+            code = code_list[(x + offset) % n_codes]
             if random_counter_cap == 0:
-                if config.capitalize:
-                    code = code.capitalize()
                 if config.capitalize or config.use_punctuation or config.add_linebreaks:
+                    if config.capitalize:
+                        code = code.capitalize()
                     random_counter_cap = randbelow(1000 + block_size)
             output_file.write(code)
             if config.capitalize or config.use_punctuation or config.add_linebreaks:
                 random_counter_cap >>= 1
-            if config.use_punctuation or config.add_linebreaks:
-                if random_counter_cap == 0: # Check again because we changed its value.
-                    p = '.'
-                    r = randbelow(1000)
-                    if r < 35:
-                        p = ','
-                        output_file.write(p)
-                        random_counter_cap = randbelow(1000 + block_size)
-                    else:
-                        if r < 37:
-                            p = '!'
-                        elif r < 50:
-                            p = '?'
-                        if config.use_punctuation:
+                if config.use_punctuation or config.add_linebreaks:
+                    if random_counter_cap == 0: # Check again because we changed its value.
+                        p = '.'
+                        r = randbelow(1000)
+                        if r < 35:
+                            p = ','
                             output_file.write(p)
-                        if config.add_linebreaks:
-                            random_counter_line >>= 1
-                            if random_counter_line == 0:
-                                output_file.write(linesep * 2)
-                                random_counter_line = randbelow(block_size)
-                                should_add_wordsep = False
+                            random_counter_cap = randbelow(1000 + block_size)
+                        else:
+                            if r < 37:
+                                p = '!'
+                            elif r < 50:
+                                p = '?'
+                            if config.use_punctuation:
+                                output_file.write(p)
+                            if config.add_linebreaks:
+                                random_counter_line >>= 1
+                                if random_counter_line == 0:
+                                    output_file.write(linesep * 2)
+                                    random_counter_line = randbelow(block_size)
+                                    should_add_wordsep = False
             offset = (offset + 1) % n_codes
         buf = read_as_bytes(input_file, block_size)
         buf_len = len(buf)
     if need_final_dot and random_counter_cap > 0:
         output_file.write('.')
 
-def decode(code_list, double_check_set=set(), input_file=stdin, output_file=stdout, config = DecoderConfiguration(wordsep = ' ', case_sensitive = False)):
+def decode(code_list, double_check_set=set(), input_file=stdin, output_file=stdout, nbits = 8, config = DecoderConfiguration(wordsep = ' ', case_sensitive = False)):
     from ahocorasick_rs import AhoCorasick, MatchKind # 3rd-party package
     ac = AhoCorasick(map(str.lower, code_list), matchkind=MatchKind.LeftmostLongest)
+    if nbits not in (1, 2, 4, 8):
+        raise ValueError("Decoding by {0} bits is not supported.".format(nbits))
     wordsep = config.wordsep
     n_codes = len(code_list)
+    max_pos_nbit_num = (1 << nbits) - 1
     max_len = max(len(wordsep), max(map(len, code_list)))
-    buf_size = max_len * n_codes
+    buf_size = max_len * max(10, n_codes)
     offset = 0
     buf_temp = input_file.read(buf_size)
     buf = buf_temp if config.case_sensitive else buf_temp.lower()
     flag_final = False
+    bit_count = 0
+    acc = 0
     while True:
         edge = 0
         for t in ac.find_matches_as_indexes(buf, overlapping=False):
@@ -133,12 +159,19 @@ def decode(code_list, double_check_set=set(), input_file=stdin, output_file=stdo
                 break
             else:
                 k = (t[0] - offset) % n_codes
-                if k > 255:
-                    raise RuntimeError("An internal counter seems out of sync. It is likely that the code file or the input file is incomplete or corrupt.")
-                output_file.write(bytes([k]))
+                if k > max_pos_nbit_num:
+                    raise RuntimeError("An internal counter seems out of sync. It is likely that the code file or the input file is incomplete or corrupt, or a command flag or argument is different from the original configuration used for encoding the file.")
+                acc += k << bit_count
+                if acc > 255:
+                    raise RuntimeError
+                bit_count += nbits
+                if bit_count >= 8:
+                    output_file.write(bytes([acc]))
+                    bit_count %= 8
+                    acc = 0
                 edge = t[2]
                 offset = (offset + 1) % n_codes
-        if flag_final: # check here, not at start, so this is like do-while.
+        if flag_final:
             break
         else:
             buf = buf[edge:]
@@ -147,19 +180,22 @@ def decode(code_list, double_check_set=set(), input_file=stdin, output_file=stdo
                 flag_final = True
             else:
                 buf += buf_temp if config.case_sensitive else buf_temp.lower()
-
+    if bit_count != 0:
+        raise RuntimeError("The ciphertext seems incomplete!")
 
 def extract_codes(file): #-> list[str]
     code_list = []
     code_set = set()
     for line in file:
         for s in line.split():
-            if s.isalpha() and s.lower() not in code_set:
-                code_list.append(s)
-                code_set.add(s.lower())
+            if s.isalpha():
+                s_lower = s.lower()
+                if s_lower not in code_set:
+                    code_list.append(s_lower)
+                    code_set.add(s_lower)
     return code_list
 
-def validateCodes(code_list, wordsep = ' ', check_length=True, case_sensitive = False): # side effect
+def validateCodes(code_list, nbits = 8, wordsep = ' ', case_sensitive = False): # side effect
     result_set = set()
     error_code = 0
     n_codes = len(code_list)
@@ -167,8 +203,9 @@ def validateCodes(code_list, wordsep = ' ', check_length=True, case_sensitive = 
     codes_and_indices = dict(map(reversed, enumerate(code_list_local)))
     if wordsep not in codes_and_indices:
         codes_and_indices[wordsep] = -1
-    if check_length and (n_codes < 256):
-        stderr.write("[Error] There are only %d codes in the code file. At least 256 are required.\n\n" % n_codes)
+    min_codes_required = 2 ** nbits
+    if n_codes < min_codes_required:
+        stderr.write("[Error] There are only {0} codes in the code file. At least {1} are required.\n\n".format(n_codes, min_codes_required))
         error_code |= 1
     reported = set()
     for code_idx1, code1 in enumerate(code_list_local):
@@ -234,6 +271,7 @@ def main():
     code_list_file_encoding = None
     input_file_encoding = None
     output_file_encoding = None
+    nbits = None
     encoder_block_size = 500
     should_extract_codes = False
     no_punctuation = False
@@ -292,6 +330,14 @@ def main():
                 stderr.write("[Error] <encoding> is expected after %s but is not given.\n" % a)
                 exit()
             output_file_encoding = argv[i]
+        elif a in ('-8bits', '--8-bits'):
+            nbits = 8
+        elif a in ('-4bits', '--4-bits'):
+            nbits = 4
+        elif a in ('-2bits', '--2-bits'):
+            nbits = 2
+        elif a in ('-1bit', '--1-bit'):
+            nbits = 1
         elif a == '--encoder-block-size':
             i += 1
             if i == argc:
@@ -354,15 +400,21 @@ def main():
         stderr.write("[Error] No code list file is specified.\n")
         exit()
     else:
-        code_list = load_code_list(code_list_file_name, code_list_file_encoding) 
-    err_code, double_check_set = validateCodes(code_list, wordsep=wordsep)
+        code_list = load_code_list(code_list_file_name, code_list_file_encoding)
+    if nbits is None:
+        nbits = 1
+        for k in (8, 4, 2):
+            if len(code_list) >= (1 << k):
+                nbits = k
+                break
+    err_code, double_check_set = validateCodes(code_list, nbits=nbits, wordsep=wordsep, case_sensitive=no_capitalize)
     if err_code != 0:
         stderr.write("It seems that the code file is problematic and cannot be used.\n")
         exit()
     if mode == MODE_ENCODE:
         input_file = stdin if input_file_name is None else open(input_file_name, 'rb')
         output_file = stdout if output_file_name is None else open(output_file_name, 'w', encoding=output_file_encoding)
-        encode(code_list, input_file, output_file, EncoderConfiguration(wordsep=wordsep, block_size=encoder_block_size, use_punctuation=not(no_punctuation), capitalize=not(no_capitalize), add_linebreaks=not(should_not_add_linebreaks)))
+        encode(code_list, input_file, output_file, nbits, EncoderConfiguration(wordsep=wordsep, block_size=encoder_block_size, use_punctuation=not(no_punctuation), capitalize=not(no_capitalize), add_linebreaks=not(should_not_add_linebreaks)))
         if input_file is not stdin:
             input_file.close()
         if output_file is not stdout:
@@ -370,11 +422,11 @@ def main():
     elif mode == MODE_DECODE:
         input_file = stdin if input_file_name is None else open(input_file_name, 'r', encoding=input_file_encoding)
         output_file = stdout if output_file_name is None else open(output_file_name, 'wb')
-        decode(code_list, double_check_set, input_file, output_file, DecoderConfiguration(wordsep=wordsep, case_sensitive=no_capitalize))
+        decode(code_list, double_check_set, input_file, output_file, nbits, DecoderConfiguration(wordsep=wordsep, case_sensitive=no_capitalize))
         if input_file is not stdin:
             input_file.close()
         if output_file is not stdout:
             output_file.close()
-    print("") # for linebreak.
+    print("") # for linebreak
 
 main()
