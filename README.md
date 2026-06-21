@@ -37,9 +37,9 @@ You can write your own code list, or use one from the `code_lists` directory:
 
 * [`code_lists/codes-atcg.txt`](code_lists/codes-atcg.txt) only contains four capital letters: `A`, `T`, `C`, `G`. (It is recommended to use this file with the following CLI flags when encoding: `--no-punctuation --no-capitalize --no-linebreaks -wsep ''`).
 
-The code list file should be a text file containing words or phrases separated by line separators. The encoding can be configured using CLI options, and whether there is a byte-order mark or not, when the encoding is UTF-8, is not important. (A compatible implementation must handle this correctly and must not require the byte-order mark to be or not be present when the encoding is UTF-8.)
+The code list file should be a text file containing words or phrases separated by line separators. The encoding can be configured using CLI options, and whether there is a byte-order mark or not, when the encoding is UTF-8, is not important. (A compatible implementation must handle this correctly and must not require the byte-order mark to be or not be present when the encoding is UTF-8.) Any blank line will be, and should be, ignored, as it doesn't conain any code.
 
-The maximum number of codes in a code list is unlimited, but at least 2 are required. If only 2 (= 2<sup>1</sup>) different codes are provided, this will encode the file bit-by-bit, but if at least 4 (= 2<sup>2</sup>) different codes are provided, this will encode every 2 bits each time, and so on, up to 256 (= 2<sup>8</sup>) codes (but only 1, 2, 4, 8 bits are supported), and if more than 256 codes are provided, they will be used in cycle (similar to polyalphabetic ciphers), and only 256 are used each time.
+The maximum number of codes in a code list is unlimited, but at least 2 are required. If only 2 (= 2<sup>1</sup>) different codes are provided, this will encode the file bit-by-bit, but if at least 4 (= 2<sup>2</sup>) different codes are provided, this will encode every 2 bits each time, and so on, up to 256 (= 2<sup>8</sup>) codes (but only 1, 2, 4, 8 bits are supported); if more than 256 codes are provided, they will be used in cycle (similar to polyalphabetic ciphers), and only 256 are used each time.
 
 The number of bits to encode will be automatically detected, but can be overridden by CLI flags as well.
 
