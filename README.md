@@ -33,6 +33,8 @@ You can write your own code list, or use one from the `code_lists` directory:
 
 * [`code_lists/codes-en.txt`](code_lists/codes-en.txt) includes words used in modern daily life, conversations and messages.
 
+* [`code_lists/codes-tickers-us.txt`](code_lists/codes-tickers-us.txt) contains widely used ticker symbols (stock symbols), e.g., `NVDA`, but not all due to technical limitations. It is not guaranteed to be up-to-date. Recommended flags: `--no-punctuation --no-capitalize --no-linebreaks`.
+
 * [`code_lists/codes-lorem.txt`](code_lists/codes-lorem.txt) contains Latin and pseudo-Latin words derived from *Lorem ipsum*.
 
 * [`code_lists/codes-atcg.txt`](code_lists/codes-atcg.txt) only contains four capital letters: `A`, `T`, `C`, `G`. (It is recommended to use this file with the following CLI flags when encoding: `--no-punctuation --no-capitalize --no-linebreaks -wsep ''`).
