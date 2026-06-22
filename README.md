@@ -49,4 +49,4 @@ The maximum number of codes in a code list is unlimited, but at least 2 are requ
 
 Please note that steganography is different from encryption, and substitution ciphers aren't secure by modern standards (which is why this documentation used ‘encode’/‘decode’ instead of ‘encrypt’/‘decrypt’). Even if you change the code list, it is still not secure as a cipher. The goal of steganography isn't to make your message undecipherable but to make people not to know to decipher it (or intercept your letters, etc.).
 
-To use this more securely, you should first encrypt your message with a modern cryptographic algorithm utilizing a symmetric/asymmetric key before applying steganography, and it would be even better if you could compress the message or data and salt it before applying encryption and steganography.
+To use this more securely, you should first encrypt your message with a modern cryptographic algorithm utilizing a symmetric/asymmetric key before applying steganography, and it would be better to compress the message or data before applying encryption and steganography.
