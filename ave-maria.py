@@ -3,6 +3,7 @@
 # Version: 0.5.0-1
 from sys import argv, stdin, stdout, stderr
 from os import linesep
+from os.path import exists
 from secrets import randbelow
 from collections import namedtuple
 
@@ -277,22 +278,25 @@ def main():
     no_punctuation = False
     no_capitalize = False
     should_not_add_linebreaks = False
+    mode_selected = False
     argc = len(argv)
     if argc == 1:
         exit(usage)
     i = 1
     while i < argc:
         a = argv[i]
-        if a in ('e', 'encode', '-e', '--encode'):
+        if (a in ('e', 'encode', '-e', '--encode')) and not mode_selected:
             if  mode == MODE_DECODE:
                 stderr.write("[Error] The encoder mode and the decoder mode cannot be used at the same time.\n")
                 exit()
             mode = MODE_ENCODE
-        elif a in ('d', 'decode', '-d', '--decode'):
+            mode_selected = True
+        elif (a in ('d', 'decode', '-d', '--decode')) and not mode_selected:
             if mode == MODE_ENCODE:
                 stderr.write("[Error] The encoder mode and the decoder mode cannot be used at the same time.\n")
                 exit()
             mode = MODE_DECODE
+            mode_selected = True
         elif a in ('-x', '--extract', '--extract-codes'):
             i += 1
             if i == argc:
@@ -385,6 +389,9 @@ def main():
         output_file_encoding = code_list_file_encoding
     if (should_extract_codes or mode == MODE_DECODE) and (input_file_encoding is None):
         input_file_encoding = code_list_file_encoding
+    if (not exists(input_file_name)) and input_file_name.startswith('-'):
+        stderr.write("[Error] Unknown option: '%s'" % input_file_name)
+        exit()
     code_list = []
     if should_extract_codes:
         with open(raw_text_file_name, 'r', encoding=input_file_encoding) as file:
@@ -411,6 +418,8 @@ def main():
     if err_code != 0:
         stderr.write("It seems that the code file is problematic and cannot be used.\n")
         exit()
+    if mode is None:
+        mode = MODE_ENCODE
     if mode == MODE_ENCODE:
         input_file = stdin if input_file_name is None else open(input_file_name, 'rb')
         output_file = stdout if output_file_name is None else open(output_file_name, 'w', encoding=output_file_encoding)
