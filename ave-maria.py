@@ -102,23 +102,21 @@ def encode(code_list, input_file=stdin, output_file=stdout, nbits = 8, config = 
             else:
                 should_add_wordsep = True
             code = code_list[(x + offset) % n_codes]
-            if random_counter_cap == 0:
-                if config.capitalize or config.use_punctuation or config.add_linebreaks:
+            if config.capitalize or config.use_punctuation or config.add_linebreaks:
+                if random_counter_cap == 0:
                     if config.capitalize:
                         code = code.capitalize()
                     random_counter_cap = randbelow(1000 + block_size)
-            output_file.write(code)
-            if config.capitalize or config.use_punctuation or config.add_linebreaks:
+                output_file.write(code)
                 random_counter_cap >>= 1
                 if config.use_punctuation or config.add_linebreaks:
                     if random_counter_cap == 0: # Check again because we changed its value.
-                        p = '.'
                         r = randbelow(1000)
                         if r < 35:
-                            p = ','
-                            output_file.write(p)
+                            output_file.write(',')
                             random_counter_cap = randbelow(1000 + block_size)
                         else:
+                            p = '.'
                             if r < 37:
                                 p = '!'
                             elif r < 50:
@@ -131,6 +129,8 @@ def encode(code_list, input_file=stdin, output_file=stdout, nbits = 8, config = 
                                     output_file.write(linesep * 2)
                                     random_counter_line = randbelow(block_size)
                                     should_add_wordsep = False
+            else:
+                output_file.write(code)
             offset = (offset + 1) % n_codes
         buf = read_as_bytes(input_file, block_size)
         buf_len = len(buf)
