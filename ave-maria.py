@@ -139,7 +139,7 @@ def encode(code_list, input_file=stdin, output_file=stdout, nbits = 8, config = 
 
 def decode(code_list, double_check_set=set(), input_file=stdin, output_file=stdout, nbits = 8, config = DecoderConfiguration(wordsep = ' ', case_sensitive = False)):
     from ahocorasick_rs import AhoCorasick, MatchKind # 3rd-party package
-    ac = AhoCorasick(map(str.lower, code_list), matchkind=MatchKind.LeftmostLongest)
+    ac = AhoCorasick(code_list if config.case_sensitive else map(str.lower, code_list), matchkind=MatchKind.LeftmostLongest)
     if nbits not in (1, 2, 4, 8):
         raise ValueError("Decoding by {0} bits is not supported.".format(nbits))
     wordsep = config.wordsep
@@ -184,11 +184,11 @@ def decode(code_list, double_check_set=set(), input_file=stdin, output_file=stdo
     if bit_count != 0:
         raise RuntimeError("The ciphertext seems incomplete!")
 
-def extract_codes(file): #-> list[str]
+def extract_codes(file, wordsep = ' '): #-> list[str]
     code_list = []
     code_set = set()
     for line in file:
-        for s in line.split():
+        for s in line.split(wordsep):
             if s.isalpha():
                 s_lower = s.lower()
                 if s_lower not in code_set:
@@ -396,7 +396,7 @@ def main():
     code_list = []
     if should_extract_codes:
         with open(raw_text_file_name, 'r', encoding=input_file_encoding) as file:
-            code_list = extract_codes(file)
+            code_list = extract_codes(file, wordsep)
         if mode == MODE_EXTRACT:
             output_file = stdout if output_file_name is None else open(output_file_name, 'w', encoding=output_file_encoding)
             for code in code_list:
